@@ -11,7 +11,6 @@ import { withModelValidations } from 'vault/decorators/model-validations';
 import { allMethods } from 'vault/helpers/mountable-auth-methods';
 import lazyCapabilities from 'vault/macros/lazy-capabilities';
 import { action } from '@ember/object';
-import { camelize } from '@ember/string';
 
 const validations = {
   path: [
@@ -69,10 +68,6 @@ export default class AuthMethodModel extends Model {
     return this.local ? 'local' : 'replicated';
   }
 
-  get supportsUserLockoutConfig() {
-    return ['approle', 'ldap', 'userpass'].includes(this.methodType);
-  }
-
   userLockoutConfig = {
     modelAttrs: [
       'config.lockoutThreshold',
@@ -84,21 +79,21 @@ export default class AuthMethodModel extends Model {
   };
 
   get tuneAttrs() {
-    // order here determines order tune fields render
-    const tuneAttrs = [
-      'listingVisibility',
-      'defaultLeaseTtl',
-      'maxLeaseTtl',
-      ...(this.methodType === 'token' ? [] : ['tokenType']),
-      'auditNonHmacRequestKeys',
-      'auditNonHmacResponseKeys',
-      'passthroughRequestHeaders',
-      'allowedResponseHeaders',
-      'pluginVersion',
-      ...(this.supportsUserLockoutConfig ? this.userLockoutConfig.apiParams.map((a) => camelize(a)) : []),
-    ];
-
-    return expandAttributeMeta(this, ['description', `config.{${tuneAttrs.join(',')}}`]);
+    const { methodType } = this;
+    let tuneAttrs;
+    // token_type should not be tuneable for the token auth method
+    if (methodType === 'token') {
+      tuneAttrs = [
+        'description',
+        'config.{listingVisibility,defaultLeaseTtl,maxLeaseTtl,auditNonHmacRequestKeys,auditNonHmacResponseKeys,passthroughRequestHeaders,allowedResponseHeaders,pluginVersion,lockoutThreshold,lockoutDuration,lockoutCounterReset,lockoutDisable}',
+      ];
+    } else {
+      tuneAttrs = [
+        'description',
+        'config.{listingVisibility,defaultLeaseTtl,maxLeaseTtl,tokenType,auditNonHmacRequestKeys,auditNonHmacResponseKeys,passthroughRequestHeaders,allowedResponseHeaders,pluginVersion,lockoutThreshold,lockoutDuration,lockoutCounterReset,lockoutDisable}',
+      ];
+    }
+    return expandAttributeMeta(this, tuneAttrs);
   }
 
   get formFields() {
