@@ -21,6 +21,7 @@ import type {
 import type ClientsVersionHistoryModel from 'vault/models/clients/version-history';
 
 interface Args {
+  activatedFeatures?: string[];
   activity: ClientsActivityModel;
   versionHistory: ClientsVersionHistoryModel[];
   startTimestamp: number;
